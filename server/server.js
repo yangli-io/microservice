@@ -9,6 +9,7 @@ var yahoo = 'https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yah
 
 app.get('/finance/:stock', function(req, res){
 	request(yahoo.replace('{stock}', req.params.stock), function(error, response, body){
+		res.header('Access-Control-Allow-Origin', '*');
 		if (!error && response.statusCode == 200) {
 			body = JSON.parse(body);
 			if (body.query.results.quote.Ask) {
