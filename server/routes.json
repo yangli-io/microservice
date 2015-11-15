@@ -1,0 +1,8 @@
+{
+	"home": {
+		"method": "GET",
+		"route": "/",
+		"code": "res.send('hello world');",
+		"lock": true
+	}
+}
