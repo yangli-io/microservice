@@ -5,48 +5,58 @@ var request = require('request');
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 var PORT = process.env.PORT || 3001 ;
-
-var yahoo = 'https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20(%22{stock}.AX%22)&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
-
 var logins = {};
 
 app.use( bodyParser.json() ); 
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+})); 
 
-app.get('/finance/:stock', function(req, res){
-	request(yahoo.replace('{stock}', req.params.stock), function(error, response, body){
-		res.header('Access-Control-Allow-Origin', '*');
-		if (!error && response.statusCode == 200) {
-			body = JSON.parse(body);
-			if (body.query.results.quote.Ask) {
-				res.send(body.query.results.quote.Ask);
-			} else {
-				res.send('error');
-			}
-	  	} else {
-	  		res.send('error');
-	  	}
-		
-	});
+app.use(function(req, res, next){
+	res.header('Access-Control-Allow-Origin', '*');
+	next();
 });
 
 app.post('/register', function(req, res){
 	var username = req.body.username;
+	console.log(req.body);
 	if (logins[username]) {
-		return res.send('user already exists');
+		res.status(400).send('user already exists');
+	} else if (!(req.body.username && req.body.password)) {
+		res.status(400).send('missing password or username');
 	} else {
 		logins[username] = req.body;
+		res.send('submitted');
 	}
 });
 
 app.post('/login', function(req, res){
 	var username = req.body.username;
 	var password = req.body.password;
-	if (login[username].password === password) {
-		res.send(_.omit(login[username], 'password'));
+	if (logins[username].password === password) {
+		res.send(_.omit(logins[username], 'password'));
 	} else {
-		res.send('incorrect login');
+		res.status(400).send('incorrect login');
 	}
 });
+
+var data = [];
+app.post('/data', function(req, res){
+	if (req.body.data) {
+		data.push(req.body.data);
+		res.send('done');
+	} else {
+		res.status(400).send('incorrect data');
+	}
+})
+
+app.get('/data', function(req, res){
+	res.json(data);
+});
+
+app.get('/chat', require('./chat').get);
+
+app.post('/chat', require('./chat').post);
 
 app.listen(PORT, function() {
 	console.log('microservice listening on PORT:' + PORT);
